@@ -59,7 +59,7 @@ def take_all():
         msges = []
         for i in chats[token]:
             msges.append(i[0])
-        return msges[:-1]
+        return [msges, chats[token][-1][1]]
 
 
 @app.route('/take_name')
