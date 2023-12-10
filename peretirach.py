@@ -185,21 +185,23 @@ class UiForm(object):
     # Function for connecting to chats \ Функция подключения к чатам
     def join_chat(self):
         global token
+        global last_msg
         if '\n' not in self.TokenLine.toPlainText():
             # Check is chat already exists, if it doesn't - creates it
             # Проверить, существует ли чат, если нет — создать его
             if requests.get(f'{base_url}/create_chat?token={self.TokenLine.toPlainText()}').text != 'Чат создан':
-                token = self.TokenLine.toPlainText()
                 msges = requests.get(f'{base_url}/take_all?token={self.TokenLine.toPlainText()}').json()
-                for i in range(len(msges)):
+                last_msg = msges[1]
+                token = self.TokenLine.toPlainText()
+                for i in range(len(msges[0])):
                     try:
-                        msgtime_utc = datetime.strptime(msges[i].split(' ')[0].strip('[]'),
+                        msgtime_utc = datetime.strptime(msges[0][i].split(' ')[0].strip('[]'),
                                                         '%H:%M').replace(tzinfo=pytz.utc)
                         local_tz = datetime.now().astimezone().tzinfo
                         msgtime_local = msgtime_utc.astimezone(local_tz).strftime('%H:%M')
-                        msges[i] = msges[i].split(' ')
-                        msges[i][0] = f'[{msgtime_local}]'
-                        msges[i] = ' '.join(msges[i])
+                        msges[0][i] = msges[0][i].split(' ')
+                        msges[0][i][0] = f'[{msgtime_local}]'
+                        msges[0][i] = ' '.join(msges[0][i])
                     except ValueError:
                         pass
                 # If there are fewer than 25 messages in a chat, blank lines are added to the beginning
@@ -207,9 +209,9 @@ class UiForm(object):
 
                 # Если в чате менее 25 сообщений, в начало добавляются пустые строки
                 # чтобы сообщения появлялись внизу
-                msges.insert(0, '\n' * (24 - len(msges)))
+                msges[0].insert(0, '\n' * (25 - len(msges[0])))
                 self.TokenLine.setText('')
-                self.msges.setText('\n'.join(msges) + '\n')
+                self.msges.setText('\n'.join(msges[0]) + '\n')
                 self.hide_connecting_ui()
             else:
                 QtWidgets.QMessageBox.critical(Form, 'Ошибка', 'Чата с таким токеном не существует,'
