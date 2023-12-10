@@ -37,9 +37,9 @@ class NewMsgCheck(QtCore.QObject):
                             msgtime_local = msgtime_utc.astimezone(local_tz).strftime('%H:%M')
                             msg = msg.split(' ')
                             msg[0] = f'[{msgtime_local}]'
+                            self.new_message.emit(' '.join(msg))
                         except ValueError:
-                            pass
-                        self.new_message.emit(' '.join(msg))
+                            self.new_message.emit(msg)
 
 
 # Input with sending via enter \ Ввод с отправкой через Enter
