@@ -5,6 +5,7 @@ import aiohttp
 import asyncio
 import pytz
 
+
 last_msg = ''
 token = ''
 base_url = 'https://peretirach--bitard-hk.repl.co/'
@@ -44,46 +45,48 @@ class NewMsgCheck(QtCore.QObject):
 
 # Input with sending via enter \ Ввод с отправкой через Enter
 class EnterHandler(QtWidgets.QTextEdit):
-    def __init__(self, form, parent):
-        super().__init__(parent)
-        self.form = form
+    def __init__(self, main_win, parent=None):
+        QtWidgets.QWidget.__init__(self, parent)
+        self.main_win = main_win
 
     def keyPressEvent(self, event):
         if event.key() == QtCore.Qt.Key_Return and not event.modifiers():
-            self.form.send_message()
+            try:
+                self.main_win.send_message()
+            except Exception as e:
+                print(e)
         else:
             super(EnterHandler, self).keyPressEvent(event)
 
 
-class UiForm(object):
-    def __init__(self, form):
+class MainWindow(QtWidgets.QMainWindow):
+    def __init__(self):
         super().__init__()
-        self.form = form
 
         response = requests.get(f'{base_url}take_name')
         self.byte_array = QtCore.QByteArray(response.content)
         self.pixmap = QtGui.QPixmap()
-        self.logo = QtWidgets.QLabel(self.form)
-        self.WriteTokenText = QtWidgets.QLabel(self.form)
-        self.TokenLine = QtWidgets.QTextEdit(self.form)
-        self.CreateChat = QtWidgets.QPushButton(self.form)
+        self.logo = QtWidgets.QLabel(self)
+        self.WriteTokenText = QtWidgets.QLabel(self)
+        self.TokenLine = QtWidgets.QTextEdit(self)
+        self.CreateChat = QtWidgets.QPushButton(self)
         self.CreateChat.setGeometry(QtCore.QRect(10, 440, 921, 61))
-        self.GoToTheChat = QtWidgets.QPushButton(self.form)
+        self.GoToTheChat = QtWidgets.QPushButton(self)
 
-        self.leave = QtWidgets.QPushButton(self.form)
-        self.entertext = EnterHandler(self, self.form)
-        self.nicktext = QtWidgets.QLabel(self.form)
-        self.sendbtn = QtWidgets.QPushButton(self.form)
-        self.nickname = QtWidgets.QTextEdit(self.form)
-        self.msges = QtWidgets.QTextEdit(self.form)
+        self.leave = QtWidgets.QPushButton(self)
+        self.entertext = EnterHandler(self, self)
+        self.nicktext = QtWidgets.QLabel(self)
+        self.sendbtn = QtWidgets.QPushButton(self)
+        self.nickname = QtWidgets.QTextEdit(self)
+        self.msges = QtWidgets.QTextEdit(self)
 
         self.NewMsgCheck = NewMsgCheck()
         self.thread = QtCore.QThread()
 
     def setup_ui(self):
-        self.form.setObjectName('Form')
-        self.form.setFixedSize(940, 581)
-        self.form.setWindowTitle('Перетира.ч')
+        self.setObjectName('Form')
+        self.setFixedSize(940, 581)
+        self.setWindowTitle('Перетира.ч')
 
         # Token input interface \ Интерфейс ввода токена
         self.pixmap.loadFromData(self.byte_array)
@@ -91,7 +94,7 @@ class UiForm(object):
         self.logo.setScaledContents(True)
         pixmap_width = self.pixmap.width()
         pixmap_height = self.pixmap.height()
-        x_position = (Form.width() - pixmap_width) // 2
+        x_position = (self.width() - pixmap_width) // 2
         self.logo.setGeometry(x_position, 25, pixmap_width, pixmap_height)
 
         self.WriteTokenText.setGeometry(QtCore.QRect(0, 205, 941, 81))
@@ -165,7 +168,7 @@ class UiForm(object):
         self.NewMsgCheck.new_message.connect(self.update_messages)
         self.thread.start()
 
-        QtCore.QMetaObject.connectSlotsByName(self.form)
+        QtCore.QMetaObject.connectSlotsByName(self)
 
     # The function which sets button labels and apply click handlers
     # Функция, которая устанавливает метки кнопок и применяет обработчики кликов
@@ -214,11 +217,11 @@ class UiForm(object):
                 self.msges.setText('\n'.join(msges[0]) + '\n')
                 self.hide_connecting_ui()
             else:
-                QtWidgets.QMessageBox.critical(Form, 'Ошибка', 'Чата с таким токеном не существует,'
+                QtWidgets.QMessageBox.critical(self, 'Ошибка', 'Чата с таким токеном не существует,'
                                                      ' но теперь он создан и вы можете в него войти',
                                                QtWidgets.QMessageBox.Ok)
         else:
-            QtWidgets.QMessageBox.critical(Form, 'Ошибка', 'Некорректный токен', QtWidgets.QMessageBox.Ok)
+            QtWidgets.QMessageBox.critical(self, 'Ошибка', 'Некорректный токен', QtWidgets.QMessageBox.Ok)
 
     # Function for creating chats \ Функция для создания чатов
     def create_chat(self):
@@ -232,10 +235,10 @@ class UiForm(object):
                 self.msges.setText('\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n')
                 self.hide_connecting_ui()
             else:
-                QtWidgets.QMessageBox.critical(Form, 'Ошибка',
+                QtWidgets.QMessageBox.critical(self, 'Ошибка',
                                                'Чат с таким токеном существует', QtWidgets.QMessageBox.Ok)
         else:
-            QtWidgets.QMessageBox.critical(Form, 'Ошибка', 'Некорректный токен', QtWidgets.QMessageBox.Ok)
+            QtWidgets.QMessageBox.critical(self, 'Ошибка', 'Некорректный токен', QtWidgets.QMessageBox.Ok)
 
     # The UI for joining a chat is hidden, the chat UI appears
     # Интерфейс входа в чат скрыт, интерфейс чата становится видимым
@@ -311,8 +314,7 @@ if __name__ == '__main__':
     pixmap = QtGui.QPixmap()
     success = pixmap.loadFromData(byte_array)
     app.setWindowIcon(QtGui.QIcon(pixmap))
-    Form = QtWidgets.QWidget()
-    ui = UiForm(Form)
+    ui = MainWindow()
     ui.setup_ui()
-    Form.show()
+    ui.show()
     sys.exit(app.exec_())
