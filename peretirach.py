@@ -1,10 +1,10 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 from datetime import datetime
+import webbrowser
 import requests
 import aiohttp
 import asyncio
 import pytz
-
 
 last_msg = ''
 token = ''
@@ -59,10 +59,17 @@ class EnterHandler(QtWidgets.QTextEdit):
             super(EnterHandler, self).keyPressEvent(event)
 
 
+def gitopen():
+    webbrowser.open('https://github.com/Nimotrosik/peretirach')
+
+
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
 
+        self.about_action = QtWidgets.QAction(self)
+        self.about_window = AboutWindow()
+        self.github_action = QtWidgets.QAction(self)
         response = requests.get(f'{base_url}take_name')
         self.byte_array = QtCore.QByteArray(response.content)
         self.pixmap = QtGui.QPixmap()
@@ -84,9 +91,15 @@ class MainWindow(QtWidgets.QMainWindow):
         self.thread = QtCore.QThread()
 
     def setup_ui(self):
-        self.setObjectName('Form')
-        self.setFixedSize(940, 581)
+        self.setFixedSize(940, 580)
         self.setWindowTitle('Перетира.ч')
+
+        self.about_action.setText('О программе')
+        self.about_action.triggered.connect(self.about)
+        self.menuBar().addAction(self.about_action)
+        self.github_action.setText('GitHub')
+        self.github_action.triggered.connect(gitopen)
+        self.menuBar().addAction(self.github_action)
 
         # Token input interface \ Интерфейс ввода токена
         self.pixmap.loadFromData(self.byte_array)
@@ -95,9 +108,9 @@ class MainWindow(QtWidgets.QMainWindow):
         pixmap_width = self.pixmap.width()
         pixmap_height = self.pixmap.height()
         x_position = (self.width() - pixmap_width) // 2
-        self.logo.setGeometry(x_position, 25, pixmap_width, pixmap_height)
+        self.logo.setGeometry(x_position, 35, pixmap_width, pixmap_height)
 
-        self.WriteTokenText.setGeometry(QtCore.QRect(0, 205, 941, 81))
+        self.WriteTokenText.setGeometry(QtCore.QRect(0, 210, 941, 81))
         font = QtGui.QFont()
         font.setFamily('Open Sans')
         font.setPointSize(14)
@@ -106,7 +119,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.WriteTokenText.setAlignment(QtCore.Qt.AlignCenter)
         self.WriteTokenText.setObjectName('WriteTokenText')
 
-        self.TokenLine.setGeometry(QtCore.QRect(290, 280, 371, 41))
+        self.TokenLine.setGeometry(QtCore.QRect(290, 285, 371, 41))
         font = QtGui.QFont()
         font.setPointSize(12)
         font.setFamily('Open Sans SemiBold')
@@ -130,7 +143,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.GoToTheChat.setObjectName('GoToTheChat')
 
         # Chat interface \ Интерфейс чата
-        self.leave.setGeometry(QtCore.QRect(20, 10, 151, 41))
+        self.leave.setGeometry(QtCore.QRect(20, 35, 151, 41))
         self.leave.setObjectName('leave')
         self.leave.hide()
 
@@ -139,7 +152,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.entertext.setObjectName('entertext')
         self.entertext.hide()
 
-        self.nicktext.setGeometry(QtCore.QRect(570, 10, 61, 41))
+        self.nicktext.setGeometry(QtCore.QRect(570, 35, 61, 41))
         self.nicktext.setObjectName('label')
         self.nicktext.hide()
 
@@ -147,18 +160,18 @@ class MainWindow(QtWidgets.QMainWindow):
         self.sendbtn.setObjectName('sendbtn')
         self.sendbtn.hide()
 
-        self.nickname.setGeometry(QtCore.QRect(640, 20, 271, 20))
+        self.nickname.setGeometry(QtCore.QRect(640, 45, 271, 20))
         self.nickname.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
         self.nickname.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
         self.nickname.setObjectName('nickname')
         self.nickname.setPlainText('Аноним')
         self.nickname.hide()
 
-        self.msges.setGeometry(QtCore.QRect(20, 60, 891, 431))
+        self.msges.setGeometry(QtCore.QRect(20, 85, 891, 400))
         self.msges.setAutoFormatting(QtWidgets.QTextEdit.AutoNone)
         self.msges.setReadOnly(True)
         self.msges.setStyleSheet('QTextEdit { background-color: white; color: black; }')
-        self.msges.setText('\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n')
+        self.msges.setText('\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n')
         self.msges.setObjectName('msges')
         self.msges.hide()
 
@@ -192,7 +205,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if '\n' not in self.TokenLine.toPlainText():
             # Check is chat already exists, if it doesn't - creates it
             # Проверить, существует ли чат, если нет — создать его
-            if requests.get(f'{base_url}/create_chat?token={self.TokenLine.toPlainText()}').text != 'Чат создан':
+            if requests.get(f'{base_url}/check_chat?token={self.TokenLine.toPlainText()}').text == 'Чат создан':
                 msges = requests.get(f'{base_url}/take_all?token={self.TokenLine.toPlainText()}').json()
                 last_msg = msges[1]
                 token = self.TokenLine.toPlainText()
@@ -207,18 +220,19 @@ class MainWindow(QtWidgets.QMainWindow):
                         msges[0][i] = ' '.join(msges[0][i])
                     except ValueError:
                         pass
-                # If there are fewer than 25 messages in a chat, blank lines are added to the beginning
+                # If there are fewer than 22 messages in a chat, blank lines are added to the beginning
                 # to appear messages to the bottom
 
-                # Если в чате менее 25 сообщений, в начало добавляются пустые строки
+                # Если в чате менее 22 сообщений, в начало добавляются пустые строки
                 # чтобы сообщения появлялись внизу
-                msges[0].insert(0, '\n' * (25 - len(msges[0])))
+                if len(msges[0]) <= 22:
+                    msges[0].insert(0, '\n' * (22 - len(msges[0])))
                 self.TokenLine.setText('')
                 self.msges.setText('\n'.join(msges[0]) + '\n')
                 self.hide_connecting_ui()
             else:
                 QtWidgets.QMessageBox.critical(self, 'Ошибка', 'Чата с таким токеном не существует,'
-                                                     ' но теперь он создан и вы можете в него войти',
+                                                               ' но теперь он создан и вы можете в него войти',
                                                QtWidgets.QMessageBox.Ok)
         else:
             QtWidgets.QMessageBox.critical(self, 'Ошибка', 'Некорректный токен', QtWidgets.QMessageBox.Ok)
@@ -232,7 +246,7 @@ class MainWindow(QtWidgets.QMainWindow):
             if requests.get(f'{base_url}/create_chat?token={self.TokenLine.toPlainText()}').text == 'Чат создан':
                 token = self.TokenLine.toPlainText()
                 self.TokenLine.setText('')
-                self.msges.setText('\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n')
+                self.msges.setText('\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n')
                 self.hide_connecting_ui()
             else:
                 QtWidgets.QMessageBox.critical(self, 'Ошибка',
@@ -255,6 +269,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.sendbtn.show()
         self.nickname.show()
         self.msges.show()
+        self.msges.moveCursor(QtGui.QTextCursor.End)
+        self.msges.ensureCursorVisible()
 
     def send_message(self):
         # Take a current UTC time \ Получаем текущее время UTC
@@ -276,11 +292,10 @@ class MainWindow(QtWidgets.QMainWindow):
         message = f'[{current_time}] {self.nickname.toPlainText()} покинул чат'
         requests.get(f'{base_url}/chat?token={token}&msg={message.strip()}')
         # Token values and last_msg are reset \ Переменные token и last_msg сбрасываются
-
-        # The chat interface is hidden, the join chat interface appears
-        # Интерфейс чата скрывается, появляется интерфейс присоединения к чату
         token = ''
         last_msg = ''
+        # The chat interface is hidden, the join chat interface appears
+        # Интерфейс чата скрывается, появляется интерфейс присоединения к чату
         self.leave.hide()
         self.nicktext.hide()
         self.entertext.hide()
@@ -305,9 +320,38 @@ class MainWindow(QtWidgets.QMainWindow):
         self.msges.moveCursor(QtGui.QTextCursor.End)
         self.msges.ensureCursorVisible()
 
+    # When closing a window, checking whether the user is in the chat If yes, then he leaves him
+    # Проверка при закрытии окна, находиться ли пользователь в чате если да, то он покидает его
+    def closeEvent(self, event):
+        if token != '':
+            self.leave_chat()
+
+    # Opening the window about the program
+    # Открытие окна о программе
+    def about(self):
+        self.about_window.show()
+
+
+class AboutWindow(QtWidgets.QWidget):
+    def __init__(self):
+        super(AboutWindow, self).__init__()
+        self.setFixedSize(680, 190)
+        self.setWindowTitle('О программе')
+        self.github = QtWidgets.QToolButton(self)
+        self.github.setGeometry(QtCore.QRect(30, 125, 625, 50))
+        self.github.setText("Посетить Git Hub")
+        self.github.clicked.connect(gitopen)
+        self.disc = QtWidgets.QLabel(self)
+        self.disc.setGeometry(QtCore.QRect(35, 15, 621, 100))
+        self.disc.setText("Перетирач - это анонимны мессенджер, разработанный при помощи PyQt, который\n"
+                          "представляет пользователям среду для обмена текстовыми сообщениями.\n"
+                          "Благодаря использованию токенов для входа в чаты отпадает необходимость в регистрации,\n"
+                          "обеспечивается анонимность и приватность.\n\nВерсия: 1.0")
+
 
 if __name__ == '__main__':
     import sys
+
     app = QtWidgets.QApplication(sys.argv)
     # Application icon loading \ Загрузка значка приложения
     byte_array = QtCore.QByteArray(requests.get(f'{base_url}take_ico').content)
