@@ -92,6 +92,16 @@ def create_chat():
             return 'Выбери другой токен'
 
 
+@app.route('/check_chat')
+def check_chat():
+    token = request.args.get('token', 'None')
+    if token != 'None':
+        if token in chats.keys():
+            return 'Чат создан'
+        else:
+            return 'Чат не создан'
+
+
 @app.route('/delete_chat')
 def delete_chat():
     token = request.args.get('token', 'None')
