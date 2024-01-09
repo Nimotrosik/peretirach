@@ -8,7 +8,7 @@ import pytz
 
 last_msg = ''
 token = ''
-base_url = 'https://peretirach--bitard-hk.repl.co/'
+base_url = 'https://db27569b-6fc0-4837-a84e-c9ec867c0f0c-00-3ajve1sx4f01d.sisko.replit.dev/'
 
 
 # Checking new messages by constant requests:
